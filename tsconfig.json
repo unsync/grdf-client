@@ -1,0 +1,6 @@
+{
+  "extends": "@unsync/tsconfig",
+  "compilerOptions": {
+    "outDir": "dist"
+  }
+}

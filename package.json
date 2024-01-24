@@ -1,0 +1,45 @@
+{
+  "name": "@unsync/grdf-client",
+  "type": "module",
+  "version": "1.0.1",
+  "license": "MIT",
+  "repository": "unsync/grdf-client",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "prepare": "husky install",
+    "test": "exit 0"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.10",
+    "@unsync/nodejs-tools": "^1.0.1",
+    "html-to-text": "^9.0.5",
+    "puppeteer": "^21.7.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-recaptcha": "^3.0.10",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "devDependencies": {
+    "@types/html-to-text": "^9.0.4",
+    "@types/node": "^20.11.5",
+    "@unsync/eslint": "^1.0.8",
+    "@types/lodash": "^4.14.202",
+    "@unsync/tsconfig": "1.0.5",
+    "eslint": "^8.56.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "lint-staged": {
+    "*.{js,ts,vue,json}": "eslint --fix"
+  }
+}

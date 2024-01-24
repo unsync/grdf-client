@@ -1,0 +1,30 @@
+name: publish package
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: check if release changed
+        id: check
+        uses: EndBug/version-check@v2
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.changed == 'true'
+        with:
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci
+        if: steps.check.outputs.changed == 'true'
+      - run: npm run test
+        if: steps.check.outputs.changed == 'true'
+      - run: npm run build
+        if: steps.check.outputs.changed == 'true'
+      - run: npm publish
+        if: steps.check.outputs.changed == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
