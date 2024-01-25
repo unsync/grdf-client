@@ -4,12 +4,12 @@
 
 > the `2captcha_key` is an api key from [https://2captcha.com](2captcha.com) that is the default provider to solve captcha.
 
-```ts 
+```ts
 const client = new GrdfClient({
-    pdl: 'string',
-    password: 'string',
-    mail: 'string',
-    '2captcha_key': 'string'
+  'pdl': 'string',
+  'password': 'string',
+  'mail': 'string',
+  '2captcha_key': 'string'
 })
 
 // all history

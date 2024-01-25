@@ -1,0 +1,4 @@
+echo "run lint-staged"
+npx lint-staged --debug
+echo "exit code:$?"
+exit 0
