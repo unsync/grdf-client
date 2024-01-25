@@ -1,7 +1,7 @@
 {
   "name": "@unsync/grdf-client",
   "type": "module",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "license": "MIT",
   "repository": "unsync/grdf-client",
   "main": "dist/index.js",
@@ -16,12 +16,12 @@
     "checkdeps": "ncu",
     "checkdeps:apply": "ncu -u",
     "lint": "eslint .",
-    "lint:fix": "eslint --fix .",
+    "lint:fix": "eslint . --fix",
     "test": "exit 0",
     "prepare": "husky"
   },
   "dependencies": {
-    "@unsync/nodejs-tools": "^1.0.1",
+    "@unsync/nodejs-tools": "^1.0.2",
     "dayjs": "^1.11.10",
     "html-to-text": "^9.0.5",
     "puppeteer": "^21.9.0",
