@@ -17,14 +17,17 @@
     "checkdeps:apply": "ncu -u",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "exit 0",
-    "prepare": "husky"
+    "prepare": "husky",
+    "release:major": "npm version -m 'release:major' major",
+    "release:minor": "npm version -m 'release:minor' minor",
+    "release:patch": "npm version -m 'release:patch' patch",
+    "test": "exit 0"
   },
   "dependencies": {
-    "@unsync/nodejs-tools": "^1.0.2",
+    "@unsync/nodejs-tools": "^1.0.4",
     "dayjs": "^1.11.10",
     "html-to-text": "^9.0.5",
-    "puppeteer": "^21.9.0",
+    "puppeteer": "^21.10.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-recaptcha": "^3.6.8",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
@@ -32,12 +35,12 @@
   "devDependencies": {
     "@types/html-to-text": "^9.0.4",
     "@types/lodash": "^4.14.202",
-    "@types/node": "^20.11.6",
-    "@unsync/eslint": "^1.0.10",
-    "@unsync/tsconfig": "1.0.6",
-    "husky": "^9.0.2",
-    "lint-staged": "^15.2.0",
-    "npm-check-updates": "^16.14.12",
+    "@types/node": "^20.11.13",
+    "@unsync/eslint": "^1.0.22",
+    "@unsync/tsconfig": "1.0.12",
+    "husky": "^9.0.7",
+    "lint-staged": "^15.2.1",
+    "npm-check-updates": "^16.14.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   },

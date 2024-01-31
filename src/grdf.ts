@@ -6,38 +6,8 @@ import { convert } from 'html-to-text'
 import puppeteer from 'puppeteer-extra'
 import RecaptchaPlugin from 'puppeteer-extra-plugin-recaptcha'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
-
-export interface GrdfConfig {
-  pdl: string
-  password: string
-  mail: string
-  '2captcha_key': string
-}
-
-export interface EnergyDataPoint {
-  start: string
-  state: number
-  sum: number
-}
-
-export interface GRDFDay {
-  dateDebutReleve: string
-  dateFinReleve: string
-  journeeGaziere: string
-  indexDebut: number
-  indexFin: number
-  volumeBrutConsomme: number
-  energieConsomme: number
-  pcs: any
-  volumeConverti: number
-  pta: any
-  natureReleve: string
-  qualificationReleve: string
-  status: any
-  coeffConversion: number
-  frequenceReleve: any
-  temperature: any
-}
+import type { GrdfConfig } from './models/grdfConfig.js'
+import type { GRDFDataPoint } from './models/GRDFDataPoint.js'
 
 export class GRDFClient {
   public config: GrdfConfig
@@ -47,36 +17,37 @@ export class GRDFClient {
     this.config = config
   }
 
-  private parseData(firstDay: Dayjs | null, dataPoints: GRDFDay[]): EnergyDataPoint[] {
+  private parseData(firstDay: Dayjs | null, dataPoints: GRDFDataPoint[]): GRDFDataPoint[] {
     try {
-      const result = []
-      let sum = 0
-
-      if (firstDay) {
-        this.logger.info(`GRDFClient > parseData > filtering data after ${firstDay.toISOString()}`)
-        dataPoints = dataPoints.filter((r) => {
-          return dayjs(r.journeeGaziere).isAfter(firstDay, 'day')
-        })
-      }
-
-      for (const r of dataPoints) {
-        const energieConsomme = r.energieConsomme ?? 0
-        sum += energieConsomme
-        result.push({
-          start: dayjs(r.journeeGaziere).startOf('day').add(12, 'hour').toISOString(),
-          state: energieConsomme,
-          sum,
-        })
-      }
-
-      return result
+      return dataPoints.filter((r: GRDFDataPoint) => {
+        return firstDay ? dayjs(r.journeeGaziere).isAfter(firstDay, 'day') : true
+      }).map((r) => {
+        return {
+          dateDebutReleve: r.dateDebutReleve,
+          dateFinReleve: r.dateFinReleve,
+          journeeGaziere: r.journeeGaziere,
+          indexDebut: r.indexDebut,
+          indexFin: r.indexFin,
+          volumeBrutConsomme: r.volumeBrutConsomme,
+          energieConsomme: r.energieConsomme,
+          pcs: r.pcs,
+          volumeConverti: r.volumeConverti,
+          pta: r.pta,
+          natureReleve: r.natureReleve,
+          qualificationReleve: r.qualificationReleve,
+          status: r.status,
+          coeffConversion: r.coeffConversion,
+          frequenceReleve: r.frequenceReleve,
+          temperature: r.temperature,
+        }
+      })
     } catch (e) {
       this.logger.error(`GRDFClient > parseData > error: ${JSON.stringify(e)}`, e)
       return []
     }
   }
 
-  public async getEnergyData(firstDay: Dayjs | null): Promise<EnergyDataPoint[]> {
+  public async getEnergyData(firstDay: Dayjs | null): Promise<GRDFDataPoint[]> {
     this.logger.info(`GRDFClient > fetch data from ${firstDay ? firstDay.toISOString() : 'history'}`)
 
     try {
