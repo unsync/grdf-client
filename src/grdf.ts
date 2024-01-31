@@ -17,10 +17,10 @@ export class GRDFClient {
     this.config = config
   }
 
-  private parseData(firstDay: Dayjs | null, dataPoints: GRDFDataPoint[]): GRDFDataPoint[] {
+  private parseData(_: { firstDay?: Dayjs, dataPoints: GRDFDataPoint[] }): GRDFDataPoint[] {
     try {
-      return dataPoints.filter((r: GRDFDataPoint) => {
-        return firstDay ? dayjs(r.journeeGaziere).isAfter(firstDay, 'day') : true
+      return _.dataPoints.filter((r: GRDFDataPoint) => {
+        return _.firstDay ? dayjs(r.journeeGaziere).isAfter(_.firstDay, 'day') : true
       }).map((r) => {
         return {
           dateDebutReleve: r.dateDebutReleve,
@@ -47,14 +47,14 @@ export class GRDFClient {
     }
   }
 
-  public async getEnergyData(firstDay: Dayjs | null): Promise<GRDFDataPoint[]> {
+  public async getEnergyData(firstDay?: Dayjs): Promise<GRDFDataPoint[]> {
     this.logger.info(`GRDFClient > fetch data from ${firstDay ? firstDay.toISOString() : 'history'}`)
 
     try {
       const cachedFile = await fs.promises.readFile(`./.data/grdf.json`, 'utf8')
       const cachedData = JSON.parse(cachedFile)[this.config.pdl].releves
       this.logger.info('GRDFClient > using cached data')
-      return this.parseData(firstDay, cachedData)
+      return this.parseData({ firstDay, dataPoints: cachedData })
     } catch (e) {
       this.logger.info('GRDFClient > no cached data')
     }
@@ -117,7 +117,7 @@ export class GRDFClient {
       const html = await page.content()
       await browser.close()
 
-      return this.parseData(firstDay, JSON.parse(convert(html))[this.config.pdl].releves)
+      return this.parseData({ firstDay, dataPoints: JSON.parse(convert(html))[this.config.pdl].releves })
     } catch (e) {
       this.logger.error(`GRDFClient > error: ${JSON.stringify(e)}`, e)
       await page.screenshot({ path: 'screenshot.png' })
