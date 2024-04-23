@@ -73,7 +73,7 @@ export class GRDFClient {
 
     // Launch the browser and open a new blank page
     const browser = await puppeteer.default.launch({
-      headless: 'new',
+      headless: true,
       args: ['--no-sandbox'],
     })
     const page = await browser.newPage()
@@ -125,7 +125,7 @@ export class GRDFClient {
       await browser.close()
 
       parsedHtml = convert(html)
-      return this.parseData(firstDay, JSON.parse(parsedHtml)[this.config.pdl].releves)
+      return this.parseData({ firstDay, dataPoints: JSON.parse(parsedHtml)[this.config.pdl].releves })
     } catch (e: any) {
       this.logger.error(`GRDFClient > error: ${JSON.stringify(e)}`, {
         message: e.message,

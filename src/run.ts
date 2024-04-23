@@ -13,7 +13,7 @@ const client = new GRDFClient({
 })
 
 // all history
-const allEnergyData = await client.getEnergyData(null)
+const allEnergyData = await client.getEnergyData(undefined)
 console.info('allEnergyData', { allEnergyData })
 
 // // all history from a date
