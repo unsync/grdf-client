@@ -13,6 +13,8 @@ jobs:
       - name: check if release changed
         id: check
         uses: EndBug/version-check@v2
+      - name: debug
+        run: echo "${{steps.check}}"
       - uses: actions/setup-node@v4
         if: steps.check.outputs.changed == 'true'
         with:
