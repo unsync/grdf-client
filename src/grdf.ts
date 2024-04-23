@@ -72,7 +72,10 @@ export class GRDFClient {
     )
 
     // Launch the browser and open a new blank page
-    const browser = await puppeteer.default.launch({ headless: 'new', args: ['--no-sandbox'] })
+    const browser = await puppeteer.default.launch({
+      headless: 'new',
+      args: ['--no-sandbox'],
+    })
     const page = await browser.newPage()
 
     // Navigate the page to a URL
@@ -81,10 +84,10 @@ export class GRDFClient {
     // Set screen size
     await page.setViewport({ width: 1080, height: 1024 })
 
+    let parsedHtml = ''
     try {
-      // Locate the full title with a unique string
-      await page.waitForSelector('#mail')
-      await page.waitForSelector('#pass')
+      this.logger.info('GRDFClient > waiting for email page')
+      await page.waitForSelector('input[name=\'identifier\']')
 
       this.logger.info('GRDFClient > waiting for cookie banner')
       try {
@@ -94,16 +97,20 @@ export class GRDFClient {
         this.logger.info('GRDFClient > no cookie banner')
       }
 
-      this.logger.info('GRDFClient > solve captcha')
-      await page.waitForSelector('iframe[src*="recaptcha/"]')
-      const result = await page.solveRecaptchas()
-      this.logger.info('GRDFClient > solve captcha finished', { solved: result.solved.length })
+      await page.type('input[name=\'identifier\']', this.config.mail)
+      await page.click('input[type=submit]')
 
-      await page.type('#mail', this.config.mail)
-      await page.type('#pass', this.config.password)
+      this.logger.info('GRDFClient > waiting for password page')
+      await page.waitForSelector('input[type=\'password\']')
+      await page.type('input[type=\'password\']', this.config.password)
 
       this.logger.info('GRDFClient > submit login')
       await page.click('input[type=submit]')
+
+      // this.logger.info('GRDFClient > solve captcha')
+      // await page.waitForSelector('iframe[src*="recaptcha/"]')
+      // const result = await page.solveRecaptchas()
+      // this.logger.info('GRDFClient > solve captcha finished', { solved: result.solved.length })
 
       this.logger.info('GRDFClient > wait for login')
       await page.waitForSelector('.conso-home')
@@ -111,15 +118,20 @@ export class GRDFClient {
       const dateEnd = dayjs().format('YYYY-MM-DD')
       const dateStart = dayjs('2021-08-02').format('YYYY-MM-DD')
       const dataUrl = `https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives?dateDebut=${dateStart}&dateFin=${dateEnd}&pceList[]=${this.config.pdl}`
-      this.logger.info('GRDFClient > fetch data', dataUrl)
+      this.logger.info('GRDFClient > fetch data', { dataUrl })
       await page.goto(dataUrl)
 
       const html = await page.content()
       await browser.close()
 
-      return this.parseData({ firstDay, dataPoints: JSON.parse(convert(html))[this.config.pdl].releves })
-    } catch (e) {
-      this.logger.error(`GRDFClient > error: ${JSON.stringify(e)}`, e)
+      parsedHtml = convert(html)
+      return this.parseData(firstDay, JSON.parse(parsedHtml)[this.config.pdl].releves)
+    } catch (e: any) {
+      this.logger.error(`GRDFClient > error: ${JSON.stringify(e)}`, {
+        message: e.message,
+        stack: e.stack,
+        parsedHtml,
+      })
       await page.screenshot({ path: 'screenshot.png' })
       return []
     }

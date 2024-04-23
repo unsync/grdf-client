@@ -12,6 +12,7 @@
     "node": ">=18"
   },
   "scripts": {
+    "dev": "tsx src/run.ts",
     "build": "tsc",
     "checkdeps": "ncu",
     "checkdeps:apply": "ncu -u",
@@ -24,24 +25,26 @@
     "test": "exit 0"
   },
   "dependencies": {
-    "@unsync/nodejs-tools": "^1.0.4",
+    "@unsync/nodejs-tools": "^1.0.5",
     "dayjs": "^1.11.10",
+    "dotenv": "^16.4.5",
     "html-to-text": "^9.0.5",
-    "puppeteer": "^21.10.0",
+    "puppeteer": "^22.7.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-recaptcha": "^3.6.8",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
   "devDependencies": {
     "@types/html-to-text": "^9.0.4",
-    "@types/lodash": "^4.14.202",
-    "@types/node": "^20.11.13",
+    "@types/lodash": "^4.17.0",
+    "@types/node": "^20.12.7",
     "@unsync/eslint": "^1.0.22",
-    "@unsync/tsconfig": "1.0.12",
-    "husky": "^9.0.7",
-    "lint-staged": "^15.2.1",
-    "npm-check-updates": "^16.14.14",
+    "@unsync/tsconfig": "^1.0.12",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
+    "npm-check-updates": "^16.14.18",
     "ts-node": "^10.9.2",
+    "tsx": "^4.7.2",
     "typescript": "^5.3.3"
   },
   "lint-staged": {
