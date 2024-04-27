@@ -125,7 +125,9 @@ export class GRDFClient {
       await browser.close()
 
       parsedHtml = convert(html)
-      return this.parseData({ firstDay, dataPoints: JSON.parse(parsedHtml)[this.config.pdl].releves })
+      const parsedData = JSON.parse(parsedHtml)[this.config.pdl].releves
+      this.logger.info('GRDFClient > fetched data', { count: parsedData.length })
+      return this.parseData({ firstDay, dataPoints: parsedData })
     } catch (e: any) {
       this.logger.error(`GRDFClient > error: ${JSON.stringify(e)}`, {
         message: e.message,
