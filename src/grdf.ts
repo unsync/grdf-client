@@ -85,6 +85,7 @@ export class GRDFClient {
     await page.setViewport({ width: 1080, height: 1024 })
 
     let parsedHtml = ''
+    let html = ''
     try {
       this.logger.info('GRDFClient > waiting for email page')
       await page.waitForSelector('input[name=\'identifier\']')
@@ -116,12 +117,12 @@ export class GRDFClient {
       await page.waitForSelector('.conso-home')
 
       const dateEnd = dayjs().format('YYYY-MM-DD')
-      const dateStart = dayjs('2021-08-02').format('YYYY-MM-DD')
+      const dateStart = dayjs('2021-09-01').format('YYYY-MM-DD')
       const dataUrl = `https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives?dateDebut=${dateStart}&dateFin=${dateEnd}&pceList[]=${this.config.pdl}`
       this.logger.info('GRDFClient > fetch data', { dataUrl })
       await page.goto(dataUrl)
 
-      const html = await page.content()
+      html = await page.content()
       await browser.close()
 
       parsedHtml = convert(html)
@@ -133,6 +134,7 @@ export class GRDFClient {
         message: e.message,
         stack: e.stack,
         parsedHtml,
+        html,
       })
       await page.screenshot({ path: 'screenshot.png' })
       return []
