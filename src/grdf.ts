@@ -86,6 +86,8 @@ export class GRDFClient {
         browser = await puppeteer.default.launch({
           headless: true,
           args: ['--no-sandbox'],
+          timeout: 10_000, // 10 seconds
+          protocolTimeout: 20_000, // 20 seconds
         })
         await sleep(1000)
         this.logger.info('GRDFClient > start browser > started')
