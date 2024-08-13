@@ -61,6 +61,7 @@ export class GRDFClient {
 
     this.logger.info('GRDFClient > setup puppeteer')
     puppeteer.default.use(StealthPlugin())
+    this.logger.info('GRDFClient > setup recaptcha')
     puppeteer.default.use(
       RecaptchaPlugin.default({
         provider: {
@@ -72,10 +73,13 @@ export class GRDFClient {
     )
 
     // Launch the browser and open a new blank page
+    this.logger.info('GRDFClient > launch browser')
     const browser = await puppeteer.default.launch({
       headless: true,
       args: ['--no-sandbox'],
     })
+
+    this.logger.info('GRDFClient > open new page')
     const page = await browser.newPage()
 
     this.logger.info('GRDFClient > request home page')
