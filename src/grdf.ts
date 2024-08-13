@@ -78,6 +78,8 @@ export class GRDFClient {
     })
     const page = await browser.newPage()
 
+    this.logger.info('GRDFClient > request home page')
+
     // Navigate the page to a URL
     await page.goto(`https://monespace.grdf.fr/client/particulier/accueil`)
 
