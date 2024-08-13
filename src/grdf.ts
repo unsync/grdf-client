@@ -3,6 +3,7 @@ import { getLogger } from '@unsync/nodejs-tools'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 import { convert } from 'html-to-text'
+import type { Browser, Page } from 'puppeteer'
 import puppeteer from 'puppeteer-extra'
 import RecaptchaPlugin from 'puppeteer-extra-plugin-recaptcha'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
@@ -74,13 +75,41 @@ export class GRDFClient {
 
     // Launch the browser and open a new blank page
     this.logger.info('GRDFClient > launch browser')
-    const browser = await puppeteer.default.launch({
-      headless: true,
-      args: ['--no-sandbox'],
-    })
 
-    this.logger.info('GRDFClient > open new page')
-    const page = await browser.newPage()
+    // Attempt to open Chrome browser 5 times maximum.
+    let browser: Browser | null = null
+    let page: Page | null = null
+    const browserStartAttempts = 5
+    for (let i = 0; i < browserStartAttempts; i++) {
+      try {
+        this.logger.info(`GRDFClient > start browser > attempt ${i + 1}/${browserStartAttempts}`)
+        browser = await puppeteer.default.launch({
+          headless: true,
+          args: ['--no-sandbox'],
+        })
+        await sleep(1000)
+        this.logger.info('GRDFClient > start browser > started')
+
+        this.logger.info('GRDFClient > start browser > open page')
+        page = await browser.newPage()
+        break
+      } catch (err: any) {
+        this.logger.error('GRDFClient > start browser > error', { message: err.message })
+        if (browser && browser?.connected) {
+          this.logger.info('GRDFClient > start browser > closing browser')
+          await browser.close()
+        }
+        await sleep(1000)
+        browser = null
+        page = null
+        this.logger.info('GRDFClient > start browser > trying again')
+      }
+    }
+
+    if (!browser || !page) {
+      this.logger.error('GRDFClient > Could not start Chrome browser.')
+      return []
+    }
 
     this.logger.info('GRDFClient > request home page')
 
@@ -146,4 +175,8 @@ export class GRDFClient {
       return []
     }
   }
+}
+
+async function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
