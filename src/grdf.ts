@@ -70,7 +70,10 @@ export class GRDFClient {
         this.logger.info(`GRDFClient > start browser > attempt ${i + 1}/${browserStartAttempts}`)
         browser = await puppeteer.default.launch({
           headless: true,
-          args: ['--no-sandbox'],
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+          ],
           timeout: 10_000, // 10 seconds
           protocolTimeout: 20_000, // 20 seconds
         })
