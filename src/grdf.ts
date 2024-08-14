@@ -72,7 +72,7 @@ export class GRDFClient {
           headless: true,
           args: [
             '--no-sandbox',
-            '--disable-setuid-sandbox',
+            // '--disable-setuid-sandbox',
           ],
           timeout: 10_000, // 10 seconds
           protocolTimeout: 20_000, // 20 seconds
@@ -129,7 +129,7 @@ export class GRDFClient {
       await page.waitForSelector('.conso-home')
 
       const cookies = await page.cookies()
-      this.logger.info('GRDFClient > cookies', { cookies: cookies.map(c => `${c.name}=${c.value}`).join('; ') })
+      this.logger.info('GRDFClient > fetched cookies', { cookies: cookies.length })
 
       const dateEnd = dayjs().format('YYYY-MM-DD')
       const dateStart = dayjs('2021-09-01').format('YYYY-MM-DD')
