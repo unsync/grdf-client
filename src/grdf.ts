@@ -2,11 +2,8 @@ import * as fs from 'node:fs'
 import { getLogger } from '@unsync/nodejs-tools'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
-import { convert } from 'html-to-text'
 import type { Browser, Page } from 'puppeteer'
 import puppeteer from 'puppeteer-extra'
-import RecaptchaPlugin from 'puppeteer-extra-plugin-recaptcha'
-import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 import type { GrdfConfig } from './models/grdfConfig.js'
 import type { GRDFDataPoint } from './models/GRDFDataPoint.js'
 
@@ -60,19 +57,6 @@ export class GRDFClient {
       this.logger.info('GRDFClient > no cached data')
     }
 
-    this.logger.info('GRDFClient > setup puppeteer')
-    puppeteer.default.use(StealthPlugin())
-    this.logger.info('GRDFClient > setup recaptcha')
-    puppeteer.default.use(
-      RecaptchaPlugin.default({
-        provider: {
-          id: '2captcha',
-          token: this.config['2captcha_key'],
-        },
-        visualFeedback: true, // colorize reCAPTCHAs (violet = detected, green = solved)
-      }),
-    )
-
     // Launch the browser and open a new blank page
     this.logger.info('GRDFClient > launch browser')
 
@@ -80,6 +64,7 @@ export class GRDFClient {
     let browser: Browser | null = null
     let page: Page | null = null
     const browserStartAttempts = 5
+    // https://github.com/puppeteer/puppeteer/issues/10144
     for (let i = 0; i < browserStartAttempts; i++) {
       try {
         this.logger.info(`GRDFClient > start browser > attempt ${i + 1}/${browserStartAttempts}`)
@@ -97,7 +82,7 @@ export class GRDFClient {
         break
       } catch (err: any) {
         this.logger.error('GRDFClient > start browser > error', { message: err.message })
-        if (browser && browser?.connected) {
+        if (browser?.connected) {
           this.logger.info('GRDFClient > start browser > closing browser')
           await browser.close()
         }
@@ -121,19 +106,11 @@ export class GRDFClient {
     // Set screen size
     await page.setViewport({ width: 1080, height: 1024 })
 
-    let parsedHtml = ''
-    let html = ''
+    const parsedHtml = ''
+    const html = ''
     try {
       this.logger.info('GRDFClient > waiting for email page')
       await page.waitForSelector('input[name=\'identifier\']')
-
-      this.logger.info('GRDFClient > waiting for cookie banner')
-      try {
-        await page.waitForSelector('#btn_accept_banner', { timeout: 10_000 })
-        await page.click('#btn_accept_banner')
-      } catch (e) {
-        this.logger.info('GRDFClient > no cookie banner')
-      }
 
       await page.type('input[name=\'identifier\']', this.config.mail)
       await page.click('input[type=submit]')
@@ -145,27 +122,46 @@ export class GRDFClient {
       this.logger.info('GRDFClient > submit login')
       await page.click('input[type=submit]')
 
-      // this.logger.info('GRDFClient > solve captcha')
-      // await page.waitForSelector('iframe[src*="recaptcha/"]')
-      // const result = await page.solveRecaptchas()
-      // this.logger.info('GRDFClient > solve captcha finished', { solved: result.solved.length })
-
       this.logger.info('GRDFClient > wait for login')
       await page.waitForSelector('.conso-home')
+
+      const cookies = await page.cookies()
+      this.logger.info('GRDFClient > cookies', { cookies: cookies.map(c => `${c.name}=${c.value}`).join('; ') })
 
       const dateEnd = dayjs().format('YYYY-MM-DD')
       const dateStart = dayjs('2021-09-01').format('YYYY-MM-DD')
       const dataUrl = `https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives?dateDebut=${dateStart}&dateFin=${dateEnd}&pceList[]=${this.config.pdl}`
       this.logger.info('GRDFClient > fetch data', { dataUrl })
-      await page.goto(dataUrl)
 
-      html = await page.content()
+      const res = await fetch(dataUrl, {
+        headers: {
+          'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'accept-language': 'fr-FR,fr;q=0.5',
+          'sec-ch-ua': '"Not)A;Brand";v="99", "Brave";v="127", "Chromium";v="127"',
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': '"macOS"',
+          'sec-fetch-dest': 'document',
+          'sec-fetch-mode': 'navigate',
+          'sec-fetch-site': 'none',
+          'sec-fetch-user': '?1',
+          'sec-gpc': '1',
+          'upgrade-insecure-requests': '1',
+          'cookie': cookies.map(c => `${c.name}=${c.value}`).join('; '),
+        },
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        this.logger.error('GRDFClient > fetch data failed', { status: res.status, statusText: res.statusText, text })
+        await browser.close()
+        return []
+      }
+
+      const data = await res.json()
+      this.logger.info('GRDFClient > fetched data', { count: data[this.config.pdl].releves.length })
+
       await browser.close()
-
-      parsedHtml = convert(html)
-      const parsedData = JSON.parse(parsedHtml)[this.config.pdl].releves
-      this.logger.info('GRDFClient > fetched data', { count: parsedData.length })
-      return this.parseData({ firstDay, dataPoints: parsedData })
+      return this.parseData({ firstDay, dataPoints: data[this.config.pdl].releves })
     } catch (e: any) {
       this.logger.error(`GRDFClient > error: ${JSON.stringify(e)}`, {
         message: e.message,
@@ -174,6 +170,7 @@ export class GRDFClient {
         html,
       })
       await page.screenshot({ path: 'screenshot.png' })
+      await browser.close()
       return []
     }
   }

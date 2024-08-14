@@ -6,3 +6,5 @@ dist
 .flaskenv*
 !.env.project
 !.env.vault
+
+screenshot.png
