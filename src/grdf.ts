@@ -132,7 +132,7 @@ export class GRDFClient {
       this.logger.info('GRDFClient > fetched cookies', { cookies: cookies.length })
 
       const dateEnd = dayjs().format('YYYY-MM-DD')
-      const dateStart = dayjs('2021-09-01').format('YYYY-MM-DD')
+      const dateStart = dayjs().subtract(1, 'year').format('YYYY-MM-DD')
       const dataUrl = `https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives?dateDebut=${dateStart}&dateFin=${dateEnd}&pceList[]=${this.config.pdl}`
       this.logger.info('GRDFClient > fetch data', { dataUrl })
 
