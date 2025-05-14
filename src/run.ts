@@ -6,10 +6,9 @@ import { GRDFClient } from './grdf.js'
 dotenv.config()
 
 const client = new GRDFClient({
-  'pdl': process.env.GRDF_PDL || '',
-  'password': process.env.GRDF_PASSWORD || '',
-  'mail': process.env.GRDF_EMAIL || '',
-  '2captcha_key': process.env.CAPTCHA_KEY || '',
+  pdl: process.env.GRDF_PDL || '',
+  password: process.env.GRDF_PASSWORD || '',
+  mail: process.env.GRDF_EMAIL || '',
 })
 
 // all history

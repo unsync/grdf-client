@@ -8,3 +8,4 @@ dist
 !.env.vault
 
 screenshot.png
+.DS_Store

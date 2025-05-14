@@ -1,9 +1,10 @@
 import * as fs from 'node:fs'
+import { OktaAuth } from '@okta/okta-auth-js'
 import { getLogger } from '@unsync/nodejs-tools'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
-import type { Browser, Page } from 'puppeteer'
-import puppeteer from 'puppeteer-extra'
+import makeFetchCookie from 'fetch-cookie'
+import { CookieJar } from 'tough-cookie'
 import type { GrdfConfig } from './models/grdfConfig.js'
 import type { GRDFDataPoint } from './models/GRDFDataPoint.js'
 
@@ -13,6 +14,48 @@ export class GRDFClient {
 
   constructor(config: GrdfConfig) {
     this.config = config
+  }
+
+  async login(email: string, password: string): Promise<string> {
+    const authClient = new OktaAuth({
+      issuer: 'https://connexion.grdf.fr/oauth2/aus5y2ta2uEHjCWIR417',
+      clientId: '0oa95ese18blzdg3p417',
+      redirectUri: 'https://monespace.grdf.fr/_codexch',
+      scopes: ['openid', 'profile', 'email'],
+    })
+
+    const transaction = await authClient.signIn({
+      username: email,
+      password,
+    })
+
+    // Create the redirect URL
+    const redirectUrl = `${authClient.getIssuerOrigin()}/login/sessionCookieRedirect?${new URLSearchParams({
+      checkAccountSetupComplete: 'true',
+      token: transaction.sessionToken || '',
+      redirectUrl: 'https://monespace.grdf.fr',
+    }).toString()}`
+
+    // Create a cookie jar to store cookies between requests
+    const jar = new CookieJar()
+    const fetchWithCookies = makeFetchCookie(fetch, jar)
+
+    // First request to handle the authentication redirect
+    await fetchWithCookies(redirectUrl)
+
+    // Now make a request to the target site to get all cookies
+    await fetchWithCookies('https://monespace.grdf.fr')
+
+    // Get all cookies for the domain
+    const cookies = await jar.getCookies('https://monespace.grdf.fr')
+
+    // Find the auth_token cookie
+    const authCookie = cookies.find(cookie => cookie.key === 'auth_token')
+
+    if (!authCookie)
+      throw new Error('Impossible de récupérer le cookie d\'authentification.')
+
+    return authCookie.value
   }
 
   private parseData(_: { firstDay?: Dayjs, dataPoints: GRDFDataPoint[] }): GRDFDataPoint[] {
@@ -57,128 +100,34 @@ export class GRDFClient {
       this.logger.info('GRDFClient > no cached data')
     }
 
-    // Launch the browser and open a new blank page
-    this.logger.info('GRDFClient > launch browser')
+    const dateDebut = firstDay ? firstDay.format('YYYY-MM-DD') : dayjs().subtract(1, 'month').format('YYYY-MM-DD')
+    const dateFin = dayjs().format('YYYY-MM-DD')
 
-    // Attempt to open Chrome browser 5 times maximum.
-    let browser: Browser | null = null
-    let page: Page | null = null
-    const browserStartAttempts = 5
-    // https://github.com/puppeteer/puppeteer/issues/10144
-    for (let i = 0; i < browserStartAttempts; i++) {
-      try {
-        this.logger.info(`GRDFClient > start browser > attempt ${i + 1}/${browserStartAttempts}`)
-        browser = await puppeteer.default.launch({
-          headless: true,
-          args: [
-            '--no-sandbox',
-            // '--disable-setuid-sandbox',
-          ],
-          timeout: 10_000, // 10 seconds
-          protocolTimeout: 20_000, // 20 seconds
-        })
-        await sleep(1000)
-        this.logger.info('GRDFClient > start browser > started')
-
-        this.logger.info('GRDFClient > start browser > open page')
-        page = await browser.newPage()
-        break
-      } catch (err: any) {
-        this.logger.error('GRDFClient > start browser > error', { message: err.message })
-        if (browser?.connected) {
-          this.logger.info('GRDFClient > start browser > closing browser')
-          await browser.close()
-        }
-        await sleep(1000)
-        browser = null
-        page = null
-        this.logger.info('GRDFClient > start browser > trying again')
-      }
-    }
-
-    if (!browser || !page) {
-      this.logger.error('GRDFClient > Could not start Chrome browser.')
-      return []
-    }
-
-    this.logger.info('GRDFClient > request home page')
-
-    // Navigate the page to a URL
-    await page.goto(`https://monespace.grdf.fr/client/particulier/accueil`)
-
-    // Set screen size
-    await page.setViewport({ width: 1080, height: 1024 })
-
-    const parsedHtml = ''
-    const html = ''
     try {
-      this.logger.info('GRDFClient > waiting for email page')
-      await page.waitForSelector('input[name=\'identifier\']')
-
-      await page.type('input[name=\'identifier\']', this.config.mail)
-      await page.click('input[type=submit]')
-
-      this.logger.info('GRDFClient > waiting for password page')
-      await page.waitForSelector('input[type=\'password\']')
-      await page.type('input[type=\'password\']', this.config.password)
-
-      this.logger.info('GRDFClient > submit login')
-      await page.click('input[type=submit]')
-
-      this.logger.info('GRDFClient > wait for login')
-      await page.waitForSelector('.conso-home')
-
-      const cookies = await page.cookies()
-      this.logger.info('GRDFClient > fetched cookies', { cookies: cookies.length })
-
-      const dateEnd = dayjs().format('YYYY-MM-DD')
-      const dateStart = dayjs().subtract(1, 'year').format('YYYY-MM-DD')
-      const dataUrl = `https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives?dateDebut=${dateStart}&dateFin=${dateEnd}&pceList[]=${this.config.pdl}`
-      this.logger.info('GRDFClient > fetch data', { dataUrl })
-
-      const res = await fetch(dataUrl, {
+      const token = await this.login(this.config.mail, this.config.password)
+      this.logger.info('GRDFClient > fetching data', { dateDebut, dateFin })
+      const response = await fetch(`https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives?dateDebut=${dateDebut}&dateFin=${dateFin}&pceList[]=${this.config.pdl}`, {
+        method: 'GET',
         headers: {
-          'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-          'accept-language': 'fr-FR,fr;q=0.5',
-          'sec-ch-ua': '"Not)A;Brand";v="99", "Brave";v="127", "Chromium";v="127"',
-          'sec-ch-ua-mobile': '?0',
-          'sec-ch-ua-platform': '"macOS"',
-          'sec-fetch-dest': 'document',
-          'sec-fetch-mode': 'navigate',
-          'sec-fetch-site': 'none',
-          'sec-fetch-user': '?1',
-          'sec-gpc': '1',
-          'upgrade-insecure-requests': '1',
-          'cookie': cookies.map(c => `${c.name}=${c.value}`).join('; '),
+          Cookie: `auth_token=${token}`,
         },
       })
 
-      if (!res.ok) {
-        const text = await res.text()
-        this.logger.error('GRDFClient > fetch data failed', { status: res.status, statusText: res.statusText, text })
-        await browser.close()
-        return []
-      }
+      if (!response.ok)
+        throw new Error('Failed to fetch data from GRDF API')
 
-      const data = await res.json()
+      const data = await response.json()
+      if (!data[this.config.pdl])
+        throw new Error('No data found for the given PDL')
+
       this.logger.info('GRDFClient > fetched data', { count: data[this.config.pdl].releves.length })
-
-      await browser.close()
       return this.parseData({ firstDay, dataPoints: data[this.config.pdl].releves })
     } catch (e: any) {
       this.logger.error(`GRDFClient > error: ${JSON.stringify(e)}`, {
         message: e.message,
         stack: e.stack,
-        parsedHtml,
-        html,
       })
-      await page.screenshot({ path: 'screenshot.png' })
-      await browser.close()
       return []
     }
   }
-}
-
-async function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
 }
