@@ -27,6 +27,7 @@
     "release:major": "npm version -m 'release:major' major",
     "release:minor": "npm version -m 'release:minor' minor",
     "release:patch": "npm version -m 'release:patch' patch",
+    "postversion": "git push origin HEAD && git push origin v$npm_package_version",
     "test": "exit 0"
   },
   "dependencies": {
