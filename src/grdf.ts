@@ -1,6 +1,5 @@
 import * as fs from 'node:fs'
 import { OktaAuth } from '@okta/okta-auth-js'
-import { getLogger } from '@unsync/nodejs-tools'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 import makeFetchCookie from 'fetch-cookie'
@@ -10,7 +9,10 @@ import type { GRDFDataPoint } from './models/GRDFDataPoint.js'
 
 export class GRDFClient {
   public config: GrdfConfig
-  private logger = getLogger({ service: 'EnergyClient' })
+  private logger = {
+    info: (...args: unknown[]) => console.warn('[GRDFClient]', ...args),
+    error: (...args: unknown[]) => console.error('[GRDFClient]', ...args),
+  }
 
   constructor(config: GrdfConfig) {
     this.config = config
@@ -82,7 +84,8 @@ export class GRDFClient {
           temperature: r.temperature,
         }
       })
-    } catch (e) {
+    }
+    catch (e) {
       this.logger.error(`GRDFClient > parseData > error: ${JSON.stringify(e)}`, e)
       return []
     }
@@ -96,7 +99,8 @@ export class GRDFClient {
       const cachedData = JSON.parse(cachedFile)[this.config.pdl].releves
       this.logger.info('GRDFClient > using cached data')
       return this.parseData({ firstDay, dataPoints: cachedData })
-    } catch (e) {
+    }
+    catch {
       this.logger.info('GRDFClient > no cached data')
     }
 
@@ -122,7 +126,8 @@ export class GRDFClient {
 
       this.logger.info('GRDFClient > fetched data', { count: data[this.config.pdl].releves.length })
       return this.parseData({ firstDay, dataPoints: data[this.config.pdl].releves })
-    } catch (e: any) {
+    }
+    catch (e: any) {
       this.logger.error(`GRDFClient > error: ${JSON.stringify(e)}`, {
         message: e.message,
         stack: e.stack,

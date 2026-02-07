@@ -28,25 +28,23 @@
   },
   "dependencies": {
     "@okta/okta-auth-js": "^7.12.1",
-    "@unsync/nodejs-tools": "^1.0.5",
     "dayjs": "^1.11.13",
     "dotenv": "^16.5.0",
     "fetch-cookie": "^3.1.0",
     "tough-cookie": "^5.1.2"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^2.27.3",
     "@types/lodash": "^4.17.0",
     "@types/node": "^20.12.7",
-    "@unsync/eslint": "^1.0.22",
-    "@unsync/tsconfig": "^1.0.12",
+    "eslint": "^9.34.0",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
     "npm-check-updates": "^16.14.18",
-    "ts-node": "^10.9.2",
     "tsx": "^4.7.2",
     "typescript": "^5.3.3"
   },
   "lint-staged": {
-    "*.{js,ts,vue,json}": "eslint --fix ."
+    "*.{js,ts,vue}": "eslint --fix . --no-warn-ignored"
   }
 }
