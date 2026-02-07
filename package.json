@@ -4,6 +4,9 @@
   "version": "1.1.17",
   "license": "MIT",
   "repository": "unsync/grdf-client",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "main": "dist/index.js",
   "files": [
     "dist"
