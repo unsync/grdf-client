@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "tsx src/run.ts",
     "build": "tsc",
+    "prepack": "npm run build",
     "checkdeps": "ncu",
     "checkdeps:apply": "ncu -u",
     "lint": "eslint .",
